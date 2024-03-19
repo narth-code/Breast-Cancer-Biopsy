@@ -16,9 +16,9 @@
 
 
 #define VERSION        (1)  // firmware version
-#define BAUD           (57600)  // How fast is the ESP32 talking?
+#define BAUD           (115200)  // How fast is the ESP32 talking?
 #define MAX_BUF        (64)  // What is the longest message ESP32 can store?
-#define STEPS_PER_TURN (400)  // depends on your stepper motor.  most are 200.
+#define STEPS_PER_TURN (200)  // depends on your stepper motor.  most are 200.
 #define MIN_STEP_DELAY (50.0)
 #define MAX_FEEDRATE   (1000000.0/MIN_STEP_DELAY)
 #define MIN_FEEDRATE   (0.01)
@@ -27,8 +27,14 @@
 // for arc directions
 #define ARC_CW          (1)
 #define ARC_CCW         (-1)
-// Arcs are split into many line segments.  How long are the segments?
-#define MM_PER_SEGMENT  (10)
+
+
+// This is for the Lead 6.35mm(0.25")
+// LinearTRAVEL/Revolution(mm) = 6.35
+// LinearTRAVEL/step (mm) = 0.03175
+
+#define MM_PER_REV  (6.35) 
+#define STEPS_PER_MM ((STEPS_PER_TURN)*16/(MM_PER_REV))
 
 
 //------------------------------------------------------------------------------

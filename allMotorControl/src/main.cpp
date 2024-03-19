@@ -19,6 +19,7 @@
 
 /* local files */
 #include <testMotor.h>
+#include <config.h>
 
 BluetoothSerial SerialBT; //< Bluetooth Serial object for communication.
 
@@ -31,9 +32,9 @@ AccelStepper stepperZ(AccelStepper::DRIVER, MOTOR_Z_STEP_PIN, MOTOR_Z_DIR_PIN);
  */
 void setup()
 {
-  Serial.begin(115200);
+  Serial.begin(BAUD);
   SerialBT.begin("ESP32_Control");
-  Serial.println("Bluetooth Device is ready to pair");
+  Serial.println(F("Bluetooth Device is ready to pair"));
   initializeMotors();
 }
 
