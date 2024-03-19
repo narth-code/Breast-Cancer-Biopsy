@@ -41,8 +41,13 @@
 #define MOTOR_Z_STEP_PIN 27
 #define MOTOR_Z_DIR_PIN 18
 
+/* LIMIT SWITCHES */
+#define LIMIT_SWITCH_X1 6 // Connect to the first limit switch for X
+#define LIMIT_SWITCH_X2 7 // Connect to the second limit switch for X
 /* Global variable */
 bool gotMessage = false; //< Flag to indicate message reception.
+int maxPositionSteps;
+
 long xSteps = 0; ///< Steps for X-axis motor.
 long ySteps = 0; ///< Steps for Y-axis motor.
 long zSteps = 0; ///< Steps for Z-axis motor.
@@ -50,5 +55,5 @@ long zSteps = 0; ///< Steps for Z-axis motor.
 // put function declarations here:
 void bluetoothTask();
 void initializeMotors();
-
+void calibrateAxis(AccelStepper& stepper, int limitSwitch1, int limitSwitch2);
 #endif /* TESTMOTOR_H */

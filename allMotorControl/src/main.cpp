@@ -36,6 +36,8 @@ void setup()
   SerialBT.begin("ESP32_Control");
   Serial.println(F("Bluetooth Device is ready to pair"));
   initializeMotors();
+
+  calibrateAxis(stepperX, LIMIT_SWITCH_X1, LIMIT_SWITCH_X2);
 }
 
 /**
@@ -124,4 +126,38 @@ void initializeMotors()
   stepperZ.setMaxSpeed(6000);
   stepperZ.setAcceleration(100);
   stepperZ.setSpeed(200);
+}
+
+void calibrateAxis(AccelStepper& stepper, int limitSwitch1, int limitSwitch2) {
+  Serial.println(F("Calibration started."));
+
+  // Approach the first limit switch
+  // Move a large distance to ensure it hits the limit
+  stepper.moveTo(100000); //Positive is moving towards the motor, rotates Clockwise
+  while (digitalRead(limitSwitch1) == HIGH) {
+    stepper.run();
+  }
+  Serial.println(F("First Limit Reached"));
+  stepper.stop(); // Stop the motor
+  stepper.setCurrentPosition(0); // Reset the position to 0
+  stepper.move(-200); // Move away from the limit switch
+
+  while (stepper.distanceToGo() != 0) {
+    stepper.run(); // Clear the move
+  }
+
+  // Approach the second limit switch
+  stepper.moveTo(-100000); // Move towards the other end
+  while (digitalRead(limitSwitch2) == HIGH) {
+    stepper.run();
+  }
+  Serial.println(F("Second Limit Reached"));
+  stepper.stop(); // Stop the motor
+
+  maxPositionSteps = -(stepper.currentPosition());
+  Serial.print(F("Max position: "));
+  Serial.println(maxPositionSteps);
+
+  //stepper.setCurrentPosition(0); // Optionally reset position after calibration
+  Serial.println(F("Calibration finished."));
 }

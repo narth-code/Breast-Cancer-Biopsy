@@ -4,16 +4,8 @@
 //------------------------------------------------------------------------------
 // CONSTANTS
 //------------------------------------------------------------------------------
-// supported control boards
-#define AMS1 (1)
-#define AMS2 (2)
-#define HG7881 (3) // HG7881 Stepper Driver
-#define PASS_STEP (4) // pass-through 4 wire Stepper.h driver
-#define CNCV3 (5) // CNC Shield V3 https://blog.protoneer.co.nz/arduino-cnc-shield/
 
-// change this line to select a different control board for your CNC.
-#define CONTROLLER CNCV3
-
+//#define LIMIT_CALIBRATION (1) //Add if need to calibrate limits
 
 #define VERSION        (1)  // firmware version
 #define BAUD           (115200)  // How fast is the ESP32 talking?

@@ -117,7 +117,7 @@ void loop() {
 }
 
 void calibrateAxis(AccelStepper& stepper, int limitSwitch1, int limitSwitch2) {
-  Serial.println("Calibration started.");
+  Serial.println(F("Calibration started."));
 
   // Approach the first limit switch
   // Move a large distance to ensure it hits the limit
@@ -125,7 +125,7 @@ void calibrateAxis(AccelStepper& stepper, int limitSwitch1, int limitSwitch2) {
   while (digitalRead(limitSwitch1) == HIGH) {
     stepper.run();
   }
-  Serial.println("First Limit Reached");
+  Serial.println(F("First Limit Reached"));
   stepper.stop(); // Stop the motor
   stepper.setCurrentPosition(0); // Reset the position to 0
   stepper.move(-200); // Move away from the limit switch
@@ -139,15 +139,15 @@ void calibrateAxis(AccelStepper& stepper, int limitSwitch1, int limitSwitch2) {
   while (digitalRead(limitSwitch2) == HIGH) {
     stepper.run();
   }
-  Serial.println("Second Limit Reached");
+  Serial.println(F("Second Limit Reached"));
   stepper.stop(); // Stop the motor
 
   maxPositionSteps = -(stepper.currentPosition());
-  Serial.print("Max position: ");
+  Serial.print(F("Max position: "));
   Serial.println(maxPositionSteps);
 
   //stepper.setCurrentPosition(0); // Optionally reset position after calibration
-  Serial.println("Calibration finished.");
+  Serial.println(F("Calibration finished."));
 }
 
 void establishOrigin(AccelStepper& stepper, int limitSwitch1){
