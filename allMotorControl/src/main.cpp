@@ -38,7 +38,9 @@ void setup()
   Serial.println(F("Bluetooth Device is ready to pair"));
   initializeMotors();
 
-  calibrateAxis(stepperX, LIMIT_SWITCH_X1, LIMIT_SWITCH_X2);
+  #ifdef LIMIT_CALIBRATION
+    calibrateAxis(stepperX, LIMIT_SWITCH_X1, LIMIT_SWITCH_X2);
+  #endif
 }
 
 /**
