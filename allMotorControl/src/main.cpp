@@ -27,6 +27,7 @@ AccelStepper stepperX(AccelStepper::DRIVER, MOTOR_X_STEP_PIN, MOTOR_X_DIR_PIN);
 AccelStepper stepperY(AccelStepper::DRIVER, MOTOR_Y_STEP_PIN, MOTOR_Y_DIR_PIN);
 AccelStepper stepperZ(AccelStepper::DRIVER, MOTOR_Z_STEP_PIN, MOTOR_Z_DIR_PIN);
 
+Positions pos;  // Store the new positions of the motors
 /**
  * @brief Setup function to initialize serial communication and motors.
  */
@@ -57,9 +58,9 @@ void loop()
      * the next step. If you are trying to use constant 
      * speed movements, you should call setSpeed() after calling moveTo().
      */
-    stepperX.moveTo(xSteps);
-    stepperY.moveTo(ySteps);
-    stepperZ.moveTo(zSteps);
+    stepperX.moveTo(pos.x);
+    stepperY.moveTo(pos.y);
+    stepperZ.moveTo(pos.z);
     gotMessage = false;
   }
   /* Poll the motor and step it if a step is due, implementing 
@@ -97,9 +98,9 @@ void bluetoothTask()
     float zPercent = strtol(strtok(NULL, ","), NULL, 10);
 
     // Convert percentages to steps (0-100% -> 0-3200 steps)
-    xSteps = (long)(xPercent / 100.0 * 3200);
-    ySteps = (long)(yPercent / 100.0 * 3200);
-    zSteps = (long)(zPercent / 100.0 * 3200);
+    pos.x = (uint16_t)(xPercent / 100.0 * 3200);
+    pos.y = (uint16_t)(yPercent / 100.0 * 3200);
+    pos.z = (uint16_t)(zPercent / 100.0 * 3200);
 
     gotMessage = true;
   }
@@ -129,6 +130,7 @@ void initializeMotors()
 }
 
 void calibrateAxis(AccelStepper& stepper, int limitSwitch1, int limitSwitch2) {
+  uint16_t maxPositionSteps;
   Serial.println(F("Calibration started."));
 
   // Approach the first limit switch
