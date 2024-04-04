@@ -33,9 +33,12 @@
 #define stepsPerRevolution 400  
 
 // Define the STEP and DIRECTION pin connections
-#define stepPin 17
-#define dirPin 21
+#define stepPin 2
+#define dirPin 5
 
+
+#define LIMIT_SWITCH_1 6
+#define LIMIT_SWITCH_2 7
 // put function declarations here:
 extern void calibrateAxis(AccelStepper& stepper, int limitSwitch1, int limitSwitch2);
 extern void establishOrigin(AccelStepper& stepper, int limitSwitch1);

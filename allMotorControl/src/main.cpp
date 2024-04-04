@@ -19,6 +19,7 @@
 
 /* local files */
 #include <testMotor.h>
+#include <config.h>
 
 BluetoothSerial SerialBT; //< Bluetooth Serial object for communication.
 
@@ -26,15 +27,20 @@ AccelStepper stepperX(AccelStepper::DRIVER, MOTOR_X_STEP_PIN, MOTOR_X_DIR_PIN);
 AccelStepper stepperY(AccelStepper::DRIVER, MOTOR_Y_STEP_PIN, MOTOR_Y_DIR_PIN);
 AccelStepper stepperZ(AccelStepper::DRIVER, MOTOR_Z_STEP_PIN, MOTOR_Z_DIR_PIN);
 
+Positions pos;  // Store the new positions of the motors
 /**
  * @brief Setup function to initialize serial communication and motors.
  */
 void setup()
 {
-  Serial.begin(115200);
+  Serial.begin(BAUD);
   SerialBT.begin("ESP32_Control");
-  Serial.println("Bluetooth Device is ready to pair");
+  Serial.println(F("Bluetooth Device is ready to pair"));
   initializeMotors();
+
+  #ifdef LIMIT_CALIBRATION
+    calibrateAxis(stepperX, LIMIT_SWITCH_X1, LIMIT_SWITCH_X2);
+  #endif
 }
 
 /**
@@ -54,9 +60,9 @@ void loop()
      * the next step. If you are trying to use constant 
      * speed movements, you should call setSpeed() after calling moveTo().
      */
-    stepperX.moveTo(xSteps);
-    stepperY.moveTo(ySteps);
-    stepperZ.moveTo(zSteps);
+    stepperX.moveTo(pos.x);
+    stepperY.moveTo(pos.y);
+    stepperZ.moveTo(pos.z);
     gotMessage = false;
   }
   /* Poll the motor and step it if a step is due, implementing 
@@ -94,9 +100,9 @@ void bluetoothTask()
     float zPercent = strtol(strtok(NULL, ","), NULL, 10);
 
     // Convert percentages to steps (0-100% -> 0-3200 steps)
-    xSteps = (long)(xPercent / 100.0 * 3200);
-    ySteps = (long)(yPercent / 100.0 * 3200);
-    zSteps = (long)(zPercent / 100.0 * 3200);
+    pos.x = (uint16_t)(xPercent / 100.0 * 3200);
+    pos.y = (uint16_t)(yPercent / 100.0 * 3200);
+    pos.z = (uint16_t)(zPercent / 100.0 * 3200);
 
     gotMessage = true;
   }
@@ -123,4 +129,39 @@ void initializeMotors()
   stepperZ.setMaxSpeed(6000);
   stepperZ.setAcceleration(100);
   stepperZ.setSpeed(200);
+}
+
+void calibrateAxis(AccelStepper& stepper, int limitSwitch1, int limitSwitch2) {
+  uint16_t maxPositionSteps;
+  Serial.println(F("Calibration started."));
+
+  // Approach the first limit switch
+  // Move a large distance to ensure it hits the limit
+  stepper.moveTo(100000); //Positive is moving towards the motor, rotates Clockwise
+  while (digitalRead(limitSwitch1) == HIGH) {
+    stepper.run();
+  }
+  Serial.println(F("First Limit Reached"));
+  stepper.stop(); // Stop the motor
+  stepper.setCurrentPosition(0); // Reset the position to 0
+  stepper.move(-200); // Move away from the limit switch
+
+  while (stepper.distanceToGo() != 0) {
+    stepper.run(); // Clear the move
+  }
+
+  // Approach the second limit switch
+  stepper.moveTo(-100000); // Move towards the other end
+  while (digitalRead(limitSwitch2) == HIGH) {
+    stepper.run();
+  }
+  Serial.println(F("Second Limit Reached"));
+  stepper.stop(); // Stop the motor
+
+  maxPositionSteps = -(stepper.currentPosition());
+  Serial.print(F("Max position: "));
+  Serial.println(maxPositionSteps);
+
+  //stepper.setCurrentPosition(0); // Optionally reset position after calibration
+  Serial.println(F("Calibration finished."));
 }
