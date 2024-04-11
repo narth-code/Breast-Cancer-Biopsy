@@ -19,8 +19,8 @@
 #define NEMA14 stepsPerRevolution(1.8, 2)  // Example for NEMA14 with FULL step
 
 // Define the STEP and DIRECTION pin connections
-#define LIMIT_SWITCH_1 5 //3
-#define LIMIT_SWITCH_2 18//2
+#define LIMIT_SWITCH_1 25 // 5
+#define LIMIT_SWITCH_2 18// 2
 #define stepPin 17
 #define dirPin 21
 

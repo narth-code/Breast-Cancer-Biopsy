@@ -54,6 +54,7 @@ bool newCommand, findLimit, allowRun = false; // booleans for new data from seri
 // Initialize the stepper library on the pins
 AccelStepper stepper(AccelStepper::DRIVER, stepPin, dirPin);
 
+// MARK: SETUP
 /**
  * @brief Setup routine to initialize serial communication and stepper motor.
  */
@@ -66,11 +67,11 @@ void setup() {
     Serial.println("Motor Testing v1");
     // Set the default values for maximum speed and acceleration:
     Serial.println("Default speed: 1000 steps/s, default acceleration: 400 steps/s^2.");
-    stepper.setSpeed(600);
-    stepper.setMaxSpeed(10000); // steps per second
+    stepper.setSpeed(800);
+    stepper.setMaxSpeed(800); // steps per second
     stepper.setAcceleration(800); // steps per second squared
 
-    //calibrateAxis(LIMIT_SWITCH_1, LIMIT_SWITCH_1);
+    calibrateAxis(LIMIT_SWITCH_1, LIMIT_SWITCH_1);
 }
 
 /**
@@ -86,9 +87,13 @@ void runMotor() {
     if (allowRun == true)
     {
         stepper.enableOutputs(); //enable pins
-        stepper.runSpeedToPosition(); // Run motor to target position at constant speed set by setSpeed();
-        
-        //stepper.run(); //step the motor (this will step the motor by 1 step at each loop)  
+        if(stepper.distanceToGo() == 0) { // Check if the motor has reached the desired position
+            allowRun = false; // Optionally stop running if position is reached
+        } else {
+           stepper.runSpeedToPosition(); // Run motor to target position at constant speed set by setSpeed();
+           //stepper.run(); //step the motor (this will step the motor by 1 step at each loop)
+            delayMicroseconds(10);  
+        }
     }
     else
     {
@@ -97,7 +102,7 @@ void runMotor() {
     }
 }
  
- 
+// MARK: SERIAL 
 void checkSerial() { //function for receiving the commands
  
     if (Serial.available() > 0) //if there's something in the serial port
@@ -195,7 +200,7 @@ void checkSerial() { //function for receiving the commands
                 break;
  
             default:  
-
+                Serial.println("Command Not Found.");
                 break;
             }
         }
@@ -238,6 +243,7 @@ void moveAbsolute() {
     stepper.moveTo(receivedSteps); //set relative distance   
 }
 
+// MARK: CALIBRATE AXIS
 void calibrateAxis(int limitSwitch1, int limitSwitch2) {
   Serial.println(F("Calibration started."));
 
@@ -258,7 +264,7 @@ void calibrateAxis(int limitSwitch1, int limitSwitch2) {
 
   // Approach the second limit switch
   stepper.moveTo(-100000); // Move towards the other end
-  while (digitalRead(limitSwitch2) == LOW) {
+  while (digitalRead(limitSwitch1) == LOW) {
     stepper.run();
   }
   Serial.println(F("Second Limit Reached"));
