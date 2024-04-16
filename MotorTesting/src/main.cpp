@@ -68,7 +68,7 @@ void setup() {
     // Set the default values for maximum speed and acceleration:
     Serial.println("Default speed: 1000 steps/s, default acceleration: 400 steps/s^2.");
     stepper.setSpeed(800);
-    stepper.setMaxSpeed(800); // steps per second
+    stepper.setMaxSpeed(1200); // steps per second
     stepper.setAcceleration(800); // steps per second squared
 
     calibrateAxis(LIMIT_SWITCH_1, LIMIT_SWITCH_1);
