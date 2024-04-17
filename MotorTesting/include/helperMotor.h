@@ -21,8 +21,8 @@
 // Define the STEP and DIRECTION pin connections
 #define LIMIT_SWITCH_1 25 // 5
 #define LIMIT_SWITCH_2 18// 2
-#define stepPin 17
-#define dirPin 21
+#define stepPin 17 // 6
+#define dirPin 21 // 7
 
 // put function declarations here:
 void runMotor();

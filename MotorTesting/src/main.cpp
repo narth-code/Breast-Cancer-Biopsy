@@ -60,18 +60,27 @@ AccelStepper stepper(AccelStepper::DRIVER, stepPin, dirPin);
  */
 void setup() {
     Serial.begin(BAUD); // Start serial communication at 115200 baud.
-    pinMode(LIMIT_SWITCH_1, INPUT);
-    pinMode(LIMIT_SWITCH_2, INPUT);
-    digitalWrite(LIMIT_SWITCH_1, LOW);  // Turns internal pull-up off
-
     Serial.println("Motor Testing v1");
+
+    // Pin Setup
+    pinMode(stepPin,OUTPUT);
+    pinMode(dirPin,OUTPUT);
+    //pinMode(LIMIT_SWITCH_1, INPUT);
+    //pinMode(LIMIT_SWITCH_2, INPUT);
+    //digitalWrite(LIMIT_SWITCH_1, LOW);  // Turns internal pull-up off
+    // =================================================================================
+
     // Set the default values for maximum speed and acceleration:
     Serial.println("Default speed: 1000 steps/s, default acceleration: 400 steps/s^2.");
-    stepper.setSpeed(800);
-    stepper.setMaxSpeed(1200); // steps per second
+    stepper.setSpeed(600);
+    stepper.setMaxSpeed(100000); // steps per second
     stepper.setAcceleration(800); // steps per second squared
+    stepper.setMinPulseWidth(100);   // @23V 30 = ,.5A, 
+                                    //  @23V 50 = 0.3, 0.62 A
 
-    calibrateAxis(LIMIT_SWITCH_1, LIMIT_SWITCH_1);
+    // =================================================================================
+
+    //calibrateAxis(LIMIT_SWITCH_1, LIMIT_SWITCH_1);
 }
 
 /**
@@ -90,9 +99,10 @@ void runMotor() {
         if(stepper.distanceToGo() == 0) { // Check if the motor has reached the desired position
             allowRun = false; // Optionally stop running if position is reached
         } else {
+           stepper.setSpeed(receivedSpeed*1000);
            stepper.runSpeedToPosition(); // Run motor to target position at constant speed set by setSpeed();
            //stepper.run(); //step the motor (this will step the motor by 1 step at each loop)
-            delayMicroseconds(10);  
+             
         }
     }
     else
@@ -119,8 +129,8 @@ void checkSerial() { //function for receiving the commands
  
             case 'R': //P uses the move() function of the AccelStepper library, which means that it moves relatively to the current position.              
                 
-                receivedSteps = Serial.parseFloat(); //value for the steps
-                //receivedSpeed = Serial.parseFloat(); //value for the speed
+                receivedSteps = Serial.parseFloat() * 800; //value for the steps
+                receivedSpeed = Serial.parseFloat(); //value for the speed
                 //direction = ((receivedSteps > 0 ? 1 : -1));
                 Serial.println((receivedSteps > 0 ? "Positive dir, CCW" : "Negative dir, CW")); //print the action
                 moveRelative(); //Run the function
@@ -131,7 +141,7 @@ void checkSerial() { //function for receiving the commands
  
             case 'A': //R uses the moveTo() function of the AccelStepper library, which means that it moves absolutely to the current position.            
  
-                receivedSteps = Serial.parseFloat(); //value for the steps
+                receivedSteps = Serial.parseFloat() * 800; //value for the steps
                 receivedSpeed = Serial.parseFloat(); //value for the speed     
                 //direction = ((receivedSteps > 0 ? 1 : -1));
                 Serial.println((receivedSteps > 0 ? "Positive dir, CW" : "Negative dir, CCW")); //print the action
@@ -153,7 +163,7 @@ void checkSerial() { //function for receiving the commands
                 allowRun = false; // allowRun disabled, since we are updating a variable
                 stepper.disableOutputs(); //disable power
                 receivedSpeed = Serial.parseFloat(); //receive the acceleration from serial
-                stepper.setAcceleration(receivedSpeed); //update the value of the variable
+                stepper.setMaxSpeed(receivedSpeed); //update the value of the variable
                 Serial.print("New max speed value: "); //confirm update by message
                 Serial.print(receivedSpeed); 
                 Serial.println(" Steps/second");
@@ -200,7 +210,7 @@ void checkSerial() { //function for receiving the commands
                 break;
  
             default:  
-                Serial.println("Command Not Found.");
+                
                 break;
             }
         }
@@ -228,7 +238,7 @@ void moveRelative() {
     //The direction is determined by the multiplier (+1 or -1)
    
     allowRun = true; //allow running - this allows entering the RunTheMotor() function.
-    //stepper.setMaxSpeed(receivedSpeed); //set speed
+    stepper.setSpeed(receivedSpeed*1000); //set speed
     stepper.move(receivedSteps); //set relative distance and direction
 }
  
@@ -239,8 +249,8 @@ void moveAbsolute() {
     //Why do we need negative numbers? - If you drive a threaded rod and the zero position is in the middle of the rod...
  
     allowRun = true; //allow running - this allows entering the RunTheMotor() function.
-    stepper.setMaxSpeed(receivedSpeed); //set speed
     stepper.moveTo(receivedSteps); //set relative distance   
+    stepper.setSpeed(receivedSpeed*1000); //set speed
 }
 
 // MARK: CALIBRATE AXIS
