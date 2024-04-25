@@ -36,7 +36,8 @@
 #include <Arduino.h>
 
 /* libraries files */
-#include <AccelStepper.h>
+#include <AccelStepper.h>   //https://github.com/waspinator/AccelStepper
+#include <EasyButton.h>
 
 /* local files */
 #include <helperMotor.h>
@@ -65,22 +66,22 @@ void setup() {
     // Pin Setup
     pinMode(stepPin,OUTPUT);
     pinMode(dirPin,OUTPUT);
-    //pinMode(LIMIT_SWITCH_1, INPUT);
-    //pinMode(LIMIT_SWITCH_2, INPUT);
-    //digitalWrite(LIMIT_SWITCH_1, LOW);  // Turns internal pull-up off
+    pinMode(LIMIT_SWITCH_1, INPUT_PULLUP);
+    //pinMode(LIMIT_SWITCH_2, INPUT_PULLUP);
+ 
     // =================================================================================
 
     // Set the default values for maximum speed and acceleration:
     Serial.println("Default speed: 1000 steps/s, default acceleration: 400 steps/s^2.");
     stepper.setSpeed(600);
-    stepper.setMaxSpeed(100000); // steps per second
+    stepper.setMaxSpeed(1000000); // steps per second
     stepper.setAcceleration(800); // steps per second squared
-    stepper.setMinPulseWidth(100);   // @23V 30 = ,.5A, 
+    //stepper.setMinPulseWidth(100);   // @23V 30 = ,.5A, 
                                     //  @23V 50 = 0.3, 0.62 A
 
     // =================================================================================
-
-    //calibrateAxis(LIMIT_SWITCH_1, LIMIT_SWITCH_1);
+    //rotateMotor(-4000);
+    calibrateAxis(LIMIT_SWITCH_1, LIMIT_SWITCH_1);
 }
 
 /**
@@ -88,10 +89,10 @@ void setup() {
  * speed, acceleration, position, and to start or stop spinning. Non-Blocking
  */
 void loop() {
-    checkSerial(); //check serial port for new commands
-    runMotor(); //function to handle the motor  
+    //checkSerial(); //check serial port for new commands
+    //runMotor(); //function to handle the motor  
 }
- 
+
 void runMotor() {
     if (allowRun == true)
     {
@@ -102,7 +103,8 @@ void runMotor() {
            stepper.setSpeed(receivedSpeed*1000);
            stepper.runSpeedToPosition(); // Run motor to target position at constant speed set by setSpeed();
            //stepper.run(); //step the motor (this will step the motor by 1 step at each loop)
-             
+        
+           delayMicroseconds(5);
         }
     }
     else
@@ -232,13 +234,13 @@ void goToOrigin() {
         stepper.moveTo(0); //set abolute distance to move
     }
 }
- 
+// MARK: MOVE FUNCTIONS
 void moveRelative() {
     //We move X steps from the current position of the stepper motor in a given direction.
     //The direction is determined by the multiplier (+1 or -1)
    
     allowRun = true; //allow running - this allows entering the RunTheMotor() function.
-    stepper.setSpeed(receivedSpeed*1000); //set speed
+    stepper.setSpeed(receivedSpeed); //set speed
     stepper.move(receivedSteps); //set relative distance and direction
 }
  
@@ -250,41 +252,74 @@ void moveAbsolute() {
  
     allowRun = true; //allow running - this allows entering the RunTheMotor() function.
     stepper.moveTo(receivedSteps); //set relative distance   
-    stepper.setSpeed(receivedSpeed*1000); //set speed
+    stepper.setSpeed(receivedSpeed*100); //set speed
 }
 
 // MARK: CALIBRATE AXIS
 void calibrateAxis(int limitSwitch1, int limitSwitch2) {
   Serial.println(F("Calibration started."));
-
+  int speed = 4500;
+  int delay = 0;
   // Approach the first limit switch
   // Move a large distance to ensure it hits the limit
-  stepper.moveTo(100000); //Positive is moving towards the motor, rotates Clockwise
+  stepper.moveTo(-1000*STEPS_PER_MM); // Move towards the motor
   while (digitalRead(limitSwitch1) == LOW) {
-    stepper.run();
+    stepper.setSpeed(speed);
+    stepper.runSpeedToPosition();
+    delayMicroseconds(delay);
   }
   Serial.println(F("First Limit Reached"));
   stepper.stop(); // Stop the motor
   stepper.setCurrentPosition(0); // Reset the position to 0
-  stepper.move(-200); // Move away from the limit switch
-
+  stepper.moveTo(4*STEPS_PER_MM); // Move away from the limit switch  
   while (stepper.distanceToGo() != 0) {
-    stepper.run(); // Clear the move
+    stepper.setSpeed(speed);
+    stepper.runSpeedToPosition();
+    delayMicroseconds(delay);
   }
 
   // Approach the second limit switch
-  stepper.moveTo(-100000); // Move towards the other end
+  stepper.moveTo(1000*STEPS_PER_MM); //Positive is moving away the motor, rotates Clockwise
   while (digitalRead(limitSwitch1) == LOW) {
-    stepper.run();
+    stepper.setSpeed(speed);
+    stepper.runSpeedToPosition();
+    delayMicroseconds(delay);
   }
   Serial.println(F("Second Limit Reached"));
   stepper.stop(); // Stop the motor
 
-  Serial.print(F("Max position: "));
+  Serial.print(F("Max steps: "));
   Serial.println(abs(stepper.currentPosition()));
+
+  Serial.print(F("Axis Length (mm): "));
+  Serial.println((float)abs(stepper.currentPosition())/STEPS_PER_MM);
+
 
   //stepper.setCurrentPosition(0); // Optionally reset position after calibration
   Serial.println(F("Calibration finished."));
+
+  stepper.moveTo(1*STEPS_PER_MM); // Move away from the limit switch  
+  while (stepper.distanceToGo() != 0) {
+    stepper.setSpeed(speed);
+    stepper.runSpeedToPosition();
+    delayMicroseconds(delay);
+  }
+  stepper.stop();
+  stepper.disableOutputs();
+}
+
+void rotateMotor(int steps) {
+  const int stepDelay = 600;
+  digitalWrite(dirPin, steps > 0 ? HIGH : LOW);
+
+  // Loop through the steps
+  for (int i = 0; i < abs(steps); i++) {
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(stepDelay);
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(stepDelay);
+  }
+  Serial.println("Rotating done.");
 }
 
 

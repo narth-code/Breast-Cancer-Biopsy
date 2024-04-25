@@ -10,17 +10,26 @@
 #define HELPERMOTOR_H
 
 #define BAUD 115200
+#define STEPS_PER_TURN      (200)  // depends on your stepper motor.  most are 200.
+#define MIN_STEP_DELAY_US   (50.0)
+#define MICROSTEP           (4)
 /* Definitions for calculating steps per revolution based on stepper characteristics
  *      stepMode: 1/2 = 2, 1/4 = 4, 1/8 = 8, 1/16 = 16
  *      stepAngle: degrees/step
  */
-#define stepsPerRevolution(stepAngle, stepMode) ((int)stepMode * (int)360/(double)stepAngle)  
-#define NEMA17 stepsPerRevolution(1.8, 2) // NEMA17 with 1.8 degree steps and 1/16 microstepping
-#define NEMA14 stepsPerRevolution(1.8, 2)  // Example for NEMA14 with FULL step
+//#define INVERT_Y     (1) // invert Y axis direction
+
+// This is for the Lead 6.35mm(0.25")
+// LinearTRAVEL/Revolution(mm) = 6.35
+// LinearTRAVEL/step (mm) = 0.03175
+
+#define MM_PER_REV  (2) 
+#define STEPS_PER_MM ((STEPS_PER_TURN)*MICROSTEP/(MM_PER_REV))
+
 
 // Define the STEP and DIRECTION pin connections
-#define LIMIT_SWITCH_1 25 // 5
-#define LIMIT_SWITCH_2 18// 2
+#define LIMIT_SWITCH_1 26 // 5
+#define LIMIT_SWITCH_2 25// 2
 #define stepPin 17 // 6
 #define dirPin 21 // 7
 
@@ -31,5 +40,6 @@ void goToOrigin();
 void moveRelative();
 void moveAbsolute();
 void calibrateAxis(int limitSwitch1, int limitSwitch2); 
+void rotateMotor(int steps);
 void printCommands();
 #endif /* HELPERMOTOR_H */
