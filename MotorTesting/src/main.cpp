@@ -86,10 +86,14 @@ void setup() {
 
     // =================================================================================
     //rotateMotor(-4000);
-    thisStepper = &stepperY;
-    calibrateAxis(thisStepper, LIMIT_SWITCH_Y, LIMIT_SWITCH_Y);
     thisStepper = &stepper;
+    Serial.printf("Calibrating X Axis at %d steps/mm\n", STEPS_PER_MM);
     calibrateAxis(thisStepper, LIMIT_SWITCH_X, LIMIT_SWITCH_X);
+    thisStepper = &stepperY;
+    Serial.printf("Calibrating Y Axis at %d steps/mm\n", STEPS_PER_MM);
+    calibrateAxis(thisStepper, LIMIT_SWITCH_Y, LIMIT_SWITCH_Y);
+
+    
 }
 
 /**
@@ -97,8 +101,8 @@ void setup() {
  * speed, acceleration, position, and to start or stop spinning. Non-Blocking
  */
 void loop() {
-    //checkSerial(); //check serial port for new commands
-    //runMotor(); //function to handle the motor  
+    checkSerial(); //check serial port for new commands
+    runMotor(); //function to handle the motor  
 }
 
 void runMotor() {
@@ -267,7 +271,7 @@ void moveAbsolute() {
 void calibrateAxis(AccelStepper* stepper, int limitSwitch1, int limitSwitch2) {
 
   Serial.println(F("Calibration started."));
-  int speed = 3000;
+  int speed = 4500;
   int delay = 0;
   // Approach the first limit switch
   // Move a large distance to ensure it hits the limit
@@ -280,7 +284,7 @@ void calibrateAxis(AccelStepper* stepper, int limitSwitch1, int limitSwitch2) {
   Serial.println(F("First Limit Reached"));
   stepper->stop(); // Stop the motor
   stepper->setCurrentPosition(0); // Reset the position to 0
-  stepper->moveTo(4*STEPS_PER_MM); // Move away from the limit switch  
+  stepper->moveTo(1*STEPS_PER_MM); // Move away from the limit switch  
   while (stepper->distanceToGo() != 0) {
     stepper->setSpeed(speed);
     stepper->runSpeedToPosition();
@@ -296,14 +300,15 @@ void calibrateAxis(AccelStepper* stepper, int limitSwitch1, int limitSwitch2) {
   }
   Serial.println(F("Second Limit Reached"));
   stepper->stop(); // Stop the motor
+  Serial.printf("Axis steps, (mm): %d, (%2f)\n", abs(stepper->currentPosition()), 
+                                        float(abs(stepper->currentPosition()) /STEPS_PER_MM));
+//   Serial.print(F("Max steps: "));
+//   Serial.println(abs(stepper->currentPosition()));
 
-  Serial.print(F("Max steps: "));
-  Serial.println(abs(stepper->currentPosition()));
-
-  Serial.print(F("Axis Length (mm): "));
-  Serial.println((float)abs(stepper->currentPosition())/STEPS_PER_MM);
-
-
+//   Serial.print(F("Axis Length (mm): "));
+//   Serial.println((float)abs(stepper->currentPosition())/STEPS_PER_MM);
+    
+  float maxSteps = abs(stepper->currentPosition());
   //stepper->setCurrentPosition(0); // Optionally reset position after calibration
   Serial.println(F("Calibration finished."));
 
@@ -315,6 +320,8 @@ void calibrateAxis(AccelStepper* stepper, int limitSwitch1, int limitSwitch2) {
   }
   stepper->stop();
   stepper->disableOutputs();
+
+  
 }
 
 void rotateMotor(int steps) {
