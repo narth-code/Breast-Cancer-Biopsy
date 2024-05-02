@@ -28,10 +28,12 @@
 
 
 // Define the STEP and DIRECTION pin connections
-#define LIMIT_SWITCH_1 26 // 5
-#define LIMIT_SWITCH_2 25// 2
-#define stepPin 17 // 6
-#define dirPin 21 // 7
+#define LIMIT_SWITCH_X 26 
+#define LIMIT_SWITCH_Y 25
+#define stepPin_Y 17 
+#define dirPin_Y 21 
+#define stepPin_X 18 
+#define dirPin_X 19 
 
 // put function declarations here:
 void runMotor();
@@ -39,7 +41,7 @@ void checkSerial();
 void goToOrigin();
 void moveRelative();
 void moveAbsolute();
-void calibrateAxis(int limitSwitch1, int limitSwitch2); 
+void calibrateAxis(AccelStepper* stepper, int limitSwitch1, int limitSwitch2); 
 void rotateMotor(int steps);
 void printCommands();
 #endif /* HELPERMOTOR_H */
