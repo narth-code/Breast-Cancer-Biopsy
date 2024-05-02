@@ -67,7 +67,7 @@ void setup() {
     pinMode(stepPin,OUTPUT);
     pinMode(dirPin,OUTPUT);
     pinMode(LIMIT_SWITCH_1, INPUT_PULLUP);
-    //pinMode(LIMIT_SWITCH_2, INPUT_PULLUP);
+    pinMode(LIMIT_SWITCH_2, INPUT_PULLUP);
  
     // =================================================================================
 
@@ -81,7 +81,7 @@ void setup() {
 
     // =================================================================================
     //rotateMotor(-4000);
-    calibrateAxis(LIMIT_SWITCH_1, LIMIT_SWITCH_1);
+    calibrateAxis(LIMIT_SWITCH_2, LIMIT_SWITCH_2);
 }
 
 /**
@@ -258,7 +258,7 @@ void moveAbsolute() {
 // MARK: CALIBRATE AXIS
 void calibrateAxis(int limitSwitch1, int limitSwitch2) {
   Serial.println(F("Calibration started."));
-  int speed = 4500;
+  int speed = 3000;
   int delay = 0;
   // Approach the first limit switch
   // Move a large distance to ensure it hits the limit
