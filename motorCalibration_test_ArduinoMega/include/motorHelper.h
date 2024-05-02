@@ -37,8 +37,8 @@
 #define dirPin 5
 
 
-#define LIMIT_SWITCH_1 6
-#define LIMIT_SWITCH_2 7
+#define LIMIT_SWITCH_1 //6
+#define LIMIT_SWITCH_2 //7
 // put function declarations here:
 extern void calibrateAxis(AccelStepper& stepper, int limitSwitch1, int limitSwitch2);
 extern void establishOrigin(AccelStepper& stepper, int limitSwitch1);
