@@ -53,21 +53,23 @@ bool newCommand, findLimit, allowRun = false; // booleans for new data from seri
 
 
 // Initialize the stepper library on the pins
-AccelStepper stepper(AccelStepper::DRIVER, stepPin, dirPin);
-
+AccelStepper stepper(AccelStepper::DRIVER, stepPin_X, dirPin_X);
+AccelStepper stepperY(AccelStepper::DRIVER, stepPin_Y, dirPin_Y);
+AccelStepper * thisStepper = NULL;
 // MARK: SETUP
 /**
  * @brief Setup routine to initialize serial communication and stepper motor.
  */
 void setup() {
+    AccelStepper * thisStepper = NULL;
     Serial.begin(BAUD); // Start serial communication at 115200 baud.
     Serial.println("Motor Testing v1");
 
     // Pin Setup
-    pinMode(stepPin,OUTPUT);
-    pinMode(dirPin,OUTPUT);
-    pinMode(LIMIT_SWITCH_1, INPUT_PULLUP);
-    pinMode(LIMIT_SWITCH_2, INPUT_PULLUP);
+    // pinMode(stepPin_X,OUTPUT);
+    // pinMode(dirPin_Y,OUTPUT);
+    pinMode(LIMIT_SWITCH_X, INPUT_PULLUP);
+    pinMode(LIMIT_SWITCH_Y, INPUT_PULLUP);
  
     // =================================================================================
 
@@ -76,12 +78,22 @@ void setup() {
     stepper.setSpeed(600);
     stepper.setMaxSpeed(1000000); // steps per second
     stepper.setAcceleration(800); // steps per second squared
+    stepperY.setSpeed(600);
+    stepperY.setMaxSpeed(1000000); // steps per second
+    stepperY.setAcceleration(800); // steps per second squared
     //stepper.setMinPulseWidth(100);   // @23V 30 = ,.5A, 
                                     //  @23V 50 = 0.3, 0.62 A
 
     // =================================================================================
     //rotateMotor(-4000);
-    calibrateAxis(LIMIT_SWITCH_2, LIMIT_SWITCH_2);
+    thisStepper = &stepper;
+    Serial.printf("Calibrating X Axis at %d steps/mm\n", STEPS_PER_MM);
+    calibrateAxis(thisStepper, LIMIT_SWITCH_X, LIMIT_SWITCH_X);
+    thisStepper = &stepperY;
+    Serial.printf("Calibrating Y Axis at %d steps/mm\n", STEPS_PER_MM);
+    calibrateAxis(thisStepper, LIMIT_SWITCH_Y, LIMIT_SWITCH_Y);
+
+    
 }
 
 /**
@@ -89,8 +101,8 @@ void setup() {
  * speed, acceleration, position, and to start or stop spinning. Non-Blocking
  */
 void loop() {
-    //checkSerial(); //check serial port for new commands
-    //runMotor(); //function to handle the motor  
+    checkSerial(); //check serial port for new commands
+    runMotor(); //function to handle the motor  
 }
 
 void runMotor() {
@@ -256,67 +268,71 @@ void moveAbsolute() {
 }
 
 // MARK: CALIBRATE AXIS
-void calibrateAxis(int limitSwitch1, int limitSwitch2) {
+void calibrateAxis(AccelStepper* stepper, int limitSwitch1, int limitSwitch2) {
+
   Serial.println(F("Calibration started."));
-  int speed = 3000;
+  int speed = 4500;
   int delay = 0;
   // Approach the first limit switch
   // Move a large distance to ensure it hits the limit
-  stepper.moveTo(-1000*STEPS_PER_MM); // Move towards the motor
+  stepper->moveTo(-1000*STEPS_PER_MM); // Move towards the motor
   while (digitalRead(limitSwitch1) == LOW) {
-    stepper.setSpeed(speed);
-    stepper.runSpeedToPosition();
+    stepper->setSpeed(speed);
+    stepper->runSpeedToPosition();
     delayMicroseconds(delay);
   }
   Serial.println(F("First Limit Reached"));
-  stepper.stop(); // Stop the motor
-  stepper.setCurrentPosition(0); // Reset the position to 0
-  stepper.moveTo(4*STEPS_PER_MM); // Move away from the limit switch  
-  while (stepper.distanceToGo() != 0) {
-    stepper.setSpeed(speed);
-    stepper.runSpeedToPosition();
+  stepper->stop(); // Stop the motor
+  stepper->setCurrentPosition(0); // Reset the position to 0
+  stepper->moveTo(1*STEPS_PER_MM); // Move away from the limit switch  
+  while (stepper->distanceToGo() != 0) {
+    stepper->setSpeed(speed);
+    stepper->runSpeedToPosition();
     delayMicroseconds(delay);
   }
 
   // Approach the second limit switch
-  stepper.moveTo(1000*STEPS_PER_MM); //Positive is moving away the motor, rotates Clockwise
+  stepper->moveTo(1000*STEPS_PER_MM); //Positive is moving away the motor, rotates Clockwise
   while (digitalRead(limitSwitch1) == LOW) {
-    stepper.setSpeed(speed);
-    stepper.runSpeedToPosition();
+    stepper->setSpeed(speed);
+    stepper->runSpeedToPosition();
     delayMicroseconds(delay);
   }
   Serial.println(F("Second Limit Reached"));
-  stepper.stop(); // Stop the motor
+  stepper->stop(); // Stop the motor
+  Serial.printf("Axis steps, (mm): %d, (%2f)\n", abs(stepper->currentPosition()), 
+                                        float(abs(stepper->currentPosition()) /STEPS_PER_MM));
+//   Serial.print(F("Max steps: "));
+//   Serial.println(abs(stepper->currentPosition()));
 
-  Serial.print(F("Max steps: "));
-  Serial.println(abs(stepper.currentPosition()));
-
-  Serial.print(F("Axis Length (mm): "));
-  Serial.println((float)abs(stepper.currentPosition())/STEPS_PER_MM);
-
-
-  //stepper.setCurrentPosition(0); // Optionally reset position after calibration
+//   Serial.print(F("Axis Length (mm): "));
+//   Serial.println((float)abs(stepper->currentPosition())/STEPS_PER_MM);
+    
+  float maxSteps = abs(stepper->currentPosition());
+  //stepper->setCurrentPosition(0); // Optionally reset position after calibration
   Serial.println(F("Calibration finished."));
 
-  stepper.moveTo(1*STEPS_PER_MM); // Move away from the limit switch  
-  while (stepper.distanceToGo() != 0) {
-    stepper.setSpeed(speed);
-    stepper.runSpeedToPosition();
+  stepper->moveTo(1*STEPS_PER_MM); // Move away from the limit switch  
+  while (stepper->distanceToGo() != 0) {
+    stepper->setSpeed(speed);
+    stepper->runSpeedToPosition();
     delayMicroseconds(delay);
   }
-  stepper.stop();
-  stepper.disableOutputs();
+  stepper->stop();
+  stepper->disableOutputs();
+
+  
 }
 
 void rotateMotor(int steps) {
   const int stepDelay = 600;
-  digitalWrite(dirPin, steps > 0 ? HIGH : LOW);
+  digitalWrite(dirPin_X, steps > 0 ? HIGH : LOW);
 
   // Loop through the steps
   for (int i = 0; i < abs(steps); i++) {
-    digitalWrite(stepPin, LOW);
+    digitalWrite(stepPin_X, LOW);
     delayMicroseconds(stepDelay);
-    digitalWrite(stepPin, HIGH);
+    digitalWrite(stepPin_X, HIGH);
     delayMicroseconds(stepDelay);
   }
   Serial.println("Rotating done.");
