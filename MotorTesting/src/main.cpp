@@ -191,7 +191,7 @@ void checkSerial() { //function for receiving the commands
                 stepper.setAcceleration(receivedAcceleration); //update the value of the variable
                 Serial.print("New acceleration value: "); // confirm update 
                 Serial.print(receivedAcceleration); 
-                Serial.println("Steps/second^2");
+                Serial.println(" Steps/second^2");
                 break;
  
             case 'L': // L: Location
@@ -242,7 +242,7 @@ void goToOrigin() {
     }
     else
     {
-        stepper.setMaxSpeed(400); //set speed manually to 400. In this project 400 is 400 step/sec = 1 rev/sec.
+        stepper.setMaxSpeed(receivedSpeed); //set speed manually to 400. In this project 400 is 400 step/sec = 1 rev/sec.
         stepper.moveTo(0); //set abolute distance to move
     }
 }

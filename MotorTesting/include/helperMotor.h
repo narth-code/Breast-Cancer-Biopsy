@@ -44,4 +44,5 @@ void moveAbsolute();
 void calibrateAxis(AccelStepper* stepper, int limitSwitch1, int limitSwitch2); 
 void rotateMotor(int steps);
 void printCommands();
+
 #endif /* HELPERMOTOR_H */
