@@ -16,30 +16,53 @@
 /* libraries files */
 #include <AccelStepper.h>
 #include <BluetoothSerial.h>
+#include <EasyButton.h>
 
 /* local files */
-#include <testMotor.h>
-#include <config.h>
+#include "testMotor.h"
+#include "config.h"
 
 BluetoothSerial SerialBT; //< Bluetooth Serial object for communication.
 
 AccelStepper stepperX(AccelStepper::DRIVER, MOTOR_X_STEP_PIN, MOTOR_X_DIR_PIN);
 AccelStepper stepperY(AccelStepper::DRIVER, MOTOR_Y_STEP_PIN, MOTOR_Y_DIR_PIN);
 AccelStepper stepperZ(AccelStepper::DRIVER, MOTOR_Z_STEP_PIN, MOTOR_Z_DIR_PIN);
+AccelStepper *thisStepper = NULL;
 
-Positions pos;  // Store the new positions of the motors
+EasyButton xLim(LIMIT_SWITCH_X, 2000, true, false);
+EasyButton yLim(LIMIT_SWITCH_Y, 2000, true, false);
+EasyButton zLim(LIMIT_SWITCH_Z, 50, true, true);
+
+int i = 0;
+float pos[3] = {0,0,0};  // Store the new positions of the motors
+float maxSteps[3] = {0,0,0};
+char mode = 'A';
 /**
  * @brief Setup function to initialize serial communication and motors.
  */
 void setup()
 {
   Serial.begin(BAUD);
-  SerialBT.begin("ESP32_Control");
-  Serial.println(F("Bluetooth Device is ready to pair"));
+  #ifdef BLUETOOTH
+    SerialBT.begin("ESP32_Motor_Control");
+    Serial.println(F("Bluetooth Device is ready to pair"));
+  #endif
+  Serial.printf("ESP32 Motor Control, Version:%d \n", VERSION);
   initializeMotors();
+  initializeButtons();
 
+    thisStepper = &stepperY;
+    calibrateAxis(thisStepper, &yLim);
+
+    thisStepper = &stepperX;
+    calibrateAxis(&stepperX, &xLim);
   #ifdef LIMIT_CALIBRATION
-    calibrateAxis(stepperX, LIMIT_SWITCH_X1, LIMIT_SWITCH_X2);
+    thisStepper = &stepperX;
+    calibrateAxis(thisStepper, LIMIT_SWITCH_X, LIMIT_SWITCH_X);
+    thisStepper = &stepperY;
+    calibrateAxis(thisStepper, LIMIT_SWITCH_Y, LIMIT_SWITCH_Y);
+    thisStepper = &stepperZ;
+    calibrateAxis(thisStepper, LIMIT_SWITCH_Z, LIMIT_SWITCH_Z);
   #endif
 }
 
@@ -48,7 +71,7 @@ void setup()
  */
 void loop()
 {
-  bluetoothTask();
+  serialTask();
 
   if (gotMessage)
   {
@@ -60,9 +83,7 @@ void loop()
      * the next step. If you are trying to use constant 
      * speed movements, you should call setSpeed() after calling moveTo().
      */
-    stepperX.moveTo(pos.x);
-    stepperY.moveTo(pos.y);
-    stepperZ.moveTo(pos.z);
+    setSteppers();
     gotMessage = false;
   }
   /* Poll the motor and step it if a step is due, implementing 
@@ -74,94 +95,174 @@ void loop()
    * and then only when a step is due,nbased on the current speed 
    * and the time since the last step.  
    */
-  stepperX.run();
-  stepperY.run();
-  stepperZ.run();
+  if(stepperX.distanceToGo() != 0){ stepperX.runSpeedToPosition();}
+  if(stepperY.distanceToGo() != 0){ stepperY.runSpeedToPosition();}
+  if(stepperZ.distanceToGo() != 0){ stepperZ.runSpeedToPosition();}
+
 }
 
 
-/**
+/** #MARK: serial
  * @brief Checks for available Bluetooth messages and parses them into motor commands.
  */
-void bluetoothTask()
+void serialTask()
 {
-  String message;
-  if (SerialBT.available())
-  {
-    message = SerialBT.readStringUntil('\n');
+  String message, data;
+  
+  #ifdef BLUETOOTH
+    if (SerialBT.available()){
+      message = SerialBT.readStringUntil('\n');
 
-    Serial.print("Received: "); // Debugging: Print the received message
-    Serial.println(message);
-
-    // Parsing logic
-    // Example parsing (very basic, for demonstration)
-    float xPercent = strtol(strtok(&message[0], ","), NULL, 10);
-    float yPercent = strtol(strtok(NULL, ","), NULL, 10);
-    float zPercent = strtol(strtok(NULL, ","), NULL, 10);
-
-    // Convert percentages to steps (0-100% -> 0-3200 steps)
-    pos.x = (uint16_t)(xPercent / 100.0 * 3200);
-    pos.y = (uint16_t)(yPercent / 100.0 * 3200);
-    pos.z = (uint16_t)(zPercent / 100.0 * 3200);
-
-    gotMessage = true;
-  }
+      Serial.print("Received: "); // Debugging: Print the received message
+      Serial.println(message);
+      gotMessage = true;
+    }
+  #else
+    if (Serial.available() > 0) {
+      String data = Serial.readStringUntil('\n'); // Read the incoming data until newline
+      if ((data[0] == 'A' || data[0] == 'R')) {
+        mode = data[0]; // Set mode to either Absolute or Relative
+        Serial.println(mode == 'A' ? "Absolute Mode" : "Relative Mode");
+      } 
+      else {
+        parseData(data);
+        gotMessage = true;
+      }
+    }
+  #endif
 }
 
 
 /**
  * @brief Initializes motor settings for maximum speed, acceleration, and initial position.
  */
-void initializeMotors()
-{
-
+void initializeMotors(){
   stepperX.setCurrentPosition(0);
   stepperX.setMaxSpeed(6000);
-  stepperX.setAcceleration(100);
   stepperX.setSpeed(200);
 
   stepperY.setCurrentPosition(0);
   stepperY.setMaxSpeed(6000);
-  stepperY.setAcceleration(100);
   stepperY.setSpeed(200);
 
   stepperZ.setCurrentPosition(0);
   stepperZ.setMaxSpeed(6000);
-  stepperZ.setAcceleration(100);
   stepperZ.setSpeed(200);
 }
+//#MARK: BUTTONS
+void buttonISR()
+{
+  xLim.read();
+  yLim.read();
+  zLim.read();
 
-void calibrateAxis(AccelStepper& stepper, int limitSwitch1, int limitSwitch2) {
-  uint16_t maxPositionSteps;
-  Serial.println(F("Calibration started."));
+  // xLim.onPressed(limitXReached);
+  // yLim.onPressed(limitYReached);
+  // zLim.onPressed(limitZReached);
+  
+}
+void initializeButtons(){
+  //pinMode(LIMIT_SWITCH_X, INPUT_PULLUP);
+  //pinMode(LIMIT_SWITCH_Y, INPUT_PULLUP);
+  xLim.begin();
+  yLim.begin();
+  zLim.begin();
+}
 
+void setSteppers() {
+  if (mode == 'A') { // Absolute positioning
+    stepperX.moveTo(pos[X]*STEPS_PER_MM);
+    stepperY.moveTo(pos[Y]*STEPS_PER_MM);
+    stepperZ.moveTo(pos[Z]*STEPS_PER_MM);
+  } else if (mode == 'R') { // Relative positioning
+    stepperX.move(pos[X]*STEPS_PER_MM);
+    stepperY.move(pos[Y]*STEPS_PER_MM);
+    stepperZ.move(pos[Z]*STEPS_PER_MM);
+  }
+  stepperX.setSpeed(MOTOR_SPEED);
+  stepperY.setSpeed(MOTOR_SPEED);
+  stepperZ.setSpeed(MOTOR_SPEED);
+}
+//#MARK: PARSE
+void parseData(String data) {
+  int index1 = data.indexOf('X');
+  int index2 = data.indexOf('Y');
+  int index3 = data.indexOf('Z');
+
+  if (index1 != -1) {
+    int spaceIndex = data.indexOf(' ', index1);
+    if (spaceIndex == -1) spaceIndex = data.length();
+    pos[X] = data.substring(index1 + 1, spaceIndex).toFloat();
+  }
+
+  if (index2 != -1) {
+    int spaceIndex = data.indexOf(' ', index2);
+    if (spaceIndex == -1) spaceIndex = data.length();
+    pos[Y] = data.substring(index2 + 1, spaceIndex).toFloat();
+  }
+
+  if (index3 != -1) {
+    int spaceIndex = data.indexOf(' ', index3);
+    if (spaceIndex == -1) spaceIndex = data.length();
+    pos[Z] = data.substring(index3 + 1, spaceIndex).toFloat();
+  }
+}
+
+//#MARK: calibrate
+void calibrateAxis(AccelStepper* stepper, EasyButton* limitSwitch) {
+Serial.println(F("Calibration started."));
+  int speed = 4000;
+  int delay = 0;
   // Approach the first limit switch
   // Move a large distance to ensure it hits the limit
-  stepper.moveTo(100000); //Positive is moving towards the motor, rotates Clockwise
-  while (digitalRead(limitSwitch1) == HIGH) {
-    stepper.run();
+  stepper->moveTo(-1000*STEPS_PER_MM); // Move towards the motor
+  while (!(limitSwitch->isPressed())) {
+    limitSwitch->read();
+    stepper->setSpeed(speed);
+    stepper->runSpeedToPosition();
+    delayMicroseconds(delay);
   }
   Serial.println(F("First Limit Reached"));
-  stepper.stop(); // Stop the motor
-  stepper.setCurrentPosition(0); // Reset the position to 0
-  stepper.move(-200); // Move away from the limit switch
-
-  while (stepper.distanceToGo() != 0) {
-    stepper.run(); // Clear the move
+  stepper->stop(); // Stop the motor
+  stepper->setCurrentPosition(0); // Reset the position to 0
+  stepper->moveTo(2*STEPS_PER_MM); // Move away from the limit switch  
+  while (stepper->distanceToGo() != 0) {
+    stepper->setSpeed(speed);
+    stepper->runSpeedToPosition();
+    delayMicroseconds(delay);
   }
 
   // Approach the second limit switch
-  stepper.moveTo(-100000); // Move towards the other end
-  while (digitalRead(limitSwitch2) == HIGH) {
-    stepper.run();
+  stepper->moveTo(1000*STEPS_PER_MM); //Positive is moving away the motor, rotates Clockwise
+  while (!(limitSwitch->isPressed())) {
+    limitSwitch->read();
+    stepper->setSpeed(speed);
+    stepper->runSpeedToPosition();
+    delayMicroseconds(delay);
   }
   Serial.println(F("Second Limit Reached"));
-  stepper.stop(); // Stop the motor
+  stepper->stop(); // Stop the motor
+  Serial.printf("Axis steps, (mm): %d, (%2f)\n", abs(stepper->currentPosition()), 
+                                        float(abs(stepper->currentPosition()) /STEPS_PER_MM));
+  maxSteps[i++]= stepper->currentPosition();
+//   Serial.print(F("Max steps: "));
+//   Serial.println(abs(stepper->currentPosition()));
 
-  maxPositionSteps = -(stepper.currentPosition());
-  Serial.print(F("Max position: "));
-  Serial.println(maxPositionSteps);
-
-  //stepper.setCurrentPosition(0); // Optionally reset position after calibration
+//   Serial.print(F("Axis Length (mm): "));
+//   Serial.println((float)abs(stepper->currentPosition())/STEPS_PER_MM);
+    
+  
+  //stepper->setCurrentPosition(0); // Optionally reset position after calibration
   Serial.println(F("Calibration finished."));
+
+  stepper->moveTo(1*STEPS_PER_MM); // Move away from the limit switch  
+  while (stepper->distanceToGo() != 0) {
+    stepper->setSpeed(speed);
+    stepper->runSpeedToPosition();
+    delayMicroseconds(delay);
+  }
+  stepper->stop();
+  stepper->disableOutputs();
+
+  
 }

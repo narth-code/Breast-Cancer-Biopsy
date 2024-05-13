@@ -14,18 +14,23 @@
 
 /* Global variable */
 bool gotMessage = false; //< Flag to indicate message reception.
+enum {
+    X,
+    Y,
+    Z
+};
 
-typedef struct{
-    u_int16_t x; ///< Steps for X-axis motor.
-    u_int16_t y; ///< Steps for Y-axis motor.
-    u_int16_t z; ///< Steps for Z-axis motor.
-} Positions;
 
 
 //------------------------------------------------------------------------------
 // METHODS
 //------------------------------------------------------------------------------
-void bluetoothTask();
+void serialTask();
 void initializeMotors();
-void calibrateAxis(AccelStepper& stepper, int limitSwitch1, int limitSwitch2);
+void initializeButtons();
+void parseData(String data);
+void setSteppers();
+void calibrateAxis(AccelStepper* stepper, EasyButton* limitSwitch);
+
+void buttonISR();
 #endif /* TESTMOTOR_H */

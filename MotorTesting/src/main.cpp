@@ -302,6 +302,7 @@ void calibrateAxis(AccelStepper* stepper, int limitSwitch1, int limitSwitch2) {
   stepper->stop(); // Stop the motor
   Serial.printf("Axis steps, (mm): %d, (%2f)\n", abs(stepper->currentPosition()), 
                                         float(abs(stepper->currentPosition()) /STEPS_PER_MM));
+  
 //   Serial.print(F("Max steps: "));
 //   Serial.println(abs(stepper->currentPosition()));
 
