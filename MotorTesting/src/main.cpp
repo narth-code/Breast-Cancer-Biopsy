@@ -77,7 +77,7 @@ void setup() {
     Serial.println("Default speed: 1000 steps/s, default acceleration: 400 steps/s^2.");
     stepper.setSpeed(600);
     stepper.setMaxSpeed(1000000); // steps per second
-    stepper.setAcceleration(800); // steps per second squared
+    stepper.setAcceleration(800); // steps per sezcond squared
     stepperY.setSpeed(600);
     stepperY.setMaxSpeed(1000000); // steps per second
     stepperY.setAcceleration(800); // steps per second squared
@@ -116,7 +116,7 @@ void runMotor() {
            stepper.runSpeedToPosition(); // Run motor to target position at constant speed set by setSpeed();
            //stepper.run(); //step the motor (this will step the motor by 1 step at each loop)
         
-           delayMicroseconds(5);
+           //delayMicroseconds(5);
         }
     }
     else
@@ -143,7 +143,7 @@ void checkSerial() { //function for receiving the commands
  
             case 'R': //P uses the move() function of the AccelStepper library, which means that it moves relatively to the current position.              
                 
-                receivedSteps = Serial.parseFloat() * 800; //value for the steps
+                receivedSteps = Serial.parseFloat() * STEPS_PER_MM; //value for the steps
                 receivedSpeed = Serial.parseFloat(); //value for the speed
                 //direction = ((receivedSteps > 0 ? 1 : -1));
                 Serial.println((receivedSteps > 0 ? "Positive dir, CCW" : "Negative dir, CW")); //print the action
@@ -155,10 +155,10 @@ void checkSerial() { //function for receiving the commands
  
             case 'A': //R uses the moveTo() function of the AccelStepper library, which means that it moves absolutely to the current position.            
  
-                receivedSteps = Serial.parseFloat() * 800; //value for the steps
+                receivedSteps = Serial.parseFloat() * STEPS_PER_MM; //value for the steps
                 receivedSpeed = Serial.parseFloat(); //value for the speed     
                 //direction = ((receivedSteps > 0 ? 1 : -1));
-                Serial.println((receivedSteps > 0 ? "Positive dir, CW" : "Negative dir, CCW")); //print the action
+                //Serial.println((receivedSteps > 0 ? "Positive dir, CW" : "Negative dir, CCW")); //print the action
                 moveAbsolute(); //Run the function
  
                 //example: R800 400 - It moves to the position which is located at +800 steps away from 0.

@@ -24,7 +24,7 @@
 // LinearTRAVEL/step (mm) = 0.03175
 
 #define MM_PER_REV  (2) 
-#define STEPS_PER_MM ((STEPS_PER_TURN)*MICROSTEP/(MM_PER_REV))
+#define STEPS_PER_MM ((STEPS_PER_TURN)*MICROSTEP/2*(MM_PER_REV))
 
 
 // Define the STEP and DIRECTION pin connections
