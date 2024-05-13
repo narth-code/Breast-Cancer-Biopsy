@@ -324,20 +324,6 @@ void calibrateAxis(AccelStepper* stepper, int limitSwitch1, int limitSwitch2) {
   
 }
 
-void rotateMotor(int steps) {
-  const int stepDelay = 600;
-  digitalWrite(dirPin_X, steps > 0 ? HIGH : LOW);
-
-  // Loop through the steps
-  for (int i = 0; i < abs(steps); i++) {
-    digitalWrite(stepPin_X, LOW);
-    delayMicroseconds(stepDelay);
-    digitalWrite(stepPin_X, HIGH);
-    delayMicroseconds(stepDelay);
-  }
-  Serial.println("Rotating done.");
-}
-
 
 void printCommands() {  
     //Printing the commands
