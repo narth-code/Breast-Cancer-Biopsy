@@ -4,10 +4,7 @@
 ** Author: Harry Tran
 ** File: main.cpp 
 ** -------- 
-** Allows dynamic control of a stepper motor's speed, acceleration, and movement 
-** through serial commands. Supports commands to set speed, acceleration, move to a specific angle,
-** and continuously spin or stop the motor. This example is configured for a NEMA17 stepper motor
-** with 1/16 microstepping.
+** This code is used to calibrate 2 axis motors (X,Y) & allows for 1 axis (X) control.
 **
 **    loop() - Main loop handling serial commands to control the stepper motor.
 **    -Transforming the motor's rotary motion into linear motion by using a threaded rod:
