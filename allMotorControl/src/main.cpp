@@ -17,9 +17,26 @@
 #define DEFINE_GLOBALS
 #include "motorHelper.h"
 
+// ==============================================================================
+// GLOBAL VARIABLES
+// ==============================================================================
+long receivedSteps;         //# of steps
+long receivedSpeed;         //Steps / second
+long receivedAcceleration;  //Steps / second^2
+char receivedCommand;
+// ------------------------------------------------------------------------------
+bool newCommand, findLimit, allowRun, gotMessage; // booleans for new data from serial, and allowRun flag
 
+AccelStepper stepperX(1, MOTOR_X_STEP_PIN, MOTOR_X_DIR_PIN);
+AccelStepper stepperY(1, MOTOR_Y_STEP_PIN, MOTOR_Y_DIR_PIN);
+AccelStepper stepperZ(1, MOTOR_Z_STEP_PIN, MOTOR_Z_DIR_PIN);
 
+Motor mX, mY, mZ;
 
+void addMotor(struct Node *m, AccelStepper *motor, u_short limit_switch, float accel, float position){
+  m->stepper = motor;
+  m->limitSwitch = limit_switch;
+}
 /**
  * @brief Setup function to initialize serial communication and motors.
  */
@@ -27,7 +44,7 @@ void setup()
 {
   Serial.begin(BAUD);
   initializeMotors();
-
+  calibrateAxis((mX.stepper), LIMIT_SWITCH_X);
   #ifdef LIMIT_CALIBRATION
     calibrateAxis(stepperX, LIMIT_SWITCH_X1, LIMIT_SWITCH_X2);
   #endif
@@ -75,6 +92,7 @@ void loop()
  */
 void initializeMotors()
 {
+  addMotor(&mX, &stepperX, LIMIT_SWITCH_X, 0 , 0);
   stepperX.setCurrentPosition(0);
   stepperX.setMaxSpeed(6000);
   stepperX.setSpeed(200);
@@ -86,6 +104,7 @@ void initializeMotors()
   stepperZ.setCurrentPosition(0);
   stepperZ.setMaxSpeed(6000);
   stepperZ.setSpeed(200);
+  
 }
 // MARK: CALIBRATE AXIS
 void calibrateAxis(AccelStepper* stepper, int limitSwitch) {
