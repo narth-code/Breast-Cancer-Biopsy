@@ -10,32 +10,23 @@
 **    bluetoothTask() - changes the blink rate of LED1 from 1-10Hz based on user input.
 */
 
-/* system includes */
-#include <Arduino.h>
 
 /* local helper files */
-#define DEFINE_GLOBALS
 #include "motorHelper.h"
 
-// ==============================================================================
-// GLOBAL VARIABLES
-// ==============================================================================
-long receivedSteps;         //# of steps
-long receivedSpeed;         //Steps / second
-long receivedAcceleration;  //Steps / second^2
-char receivedCommand;
-// ------------------------------------------------------------------------------
-bool newCommand, findLimit, allowRun, gotMessage; // booleans for new data from serial, and allowRun flag
 
-AccelStepper stepperX(1, MOTOR_X_STEP_PIN, MOTOR_X_DIR_PIN);
-AccelStepper stepperY(1, MOTOR_Y_STEP_PIN, MOTOR_Y_DIR_PIN);
-AccelStepper stepperZ(1, MOTOR_Z_STEP_PIN, MOTOR_Z_DIR_PIN);
+
+// AccelStepper stepperX(1, MOTOR_X_STEP_PIN, MOTOR_X_DIR_PIN);
+// AccelStepper stepperY(1, MOTOR_Y_STEP_PIN, MOTOR_Y_DIR_PIN);
+// AccelStepper stepperZ(1, MOTOR_Z_STEP_PIN, MOTOR_Z_DIR_PIN);
 
 Motor mX, mY, mZ;
 
-void addMotor(struct Node *m, AccelStepper *motor, u_short limit_switch, float accel, float position){
+void addMotor(Motor *m, AccelStepper *motor, u_char limit_switch, float accel, float position){
   m->stepper = motor;
   m->limitSwitch = limit_switch;
+  m->stepper->setAcceleration(accel);
+  m->stepper->setCurrentPosition(position);
 }
 /**
  * @brief Setup function to initialize serial communication and motors.
@@ -97,10 +88,12 @@ void initializeMotors()
   stepperX.setMaxSpeed(6000);
   stepperX.setSpeed(200);
 
+  addMotor(&mX, &stepperX, LIMIT_SWITCH_Y, 0 , 0);
   stepperY.setCurrentPosition(0);
   stepperY.setMaxSpeed(6000);
   stepperY.setSpeed(200);
 
+  addMotor(&mX, &stepperX, LIMIT_SWITCH_Z, 0 , 0);
   stepperZ.setCurrentPosition(0);
   stepperZ.setMaxSpeed(6000);
   stepperZ.setSpeed(200);
