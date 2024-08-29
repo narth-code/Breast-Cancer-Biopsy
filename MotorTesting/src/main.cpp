@@ -280,6 +280,7 @@ void calibrateAxis(AccelStepper* stepper, int limitSwitch1, int limitSwitch2) {
   }
   Serial.println(F("First Limit Reached"));
   stepper->stop(); // Stop the motor
+  delayMicroseconds(1000); // delay needed when switching directions
   stepper->setCurrentPosition(0); // Reset the position to 0
   stepper->moveTo(1*STEPS_PER_MM); // Move away from the limit switch  
   while (stepper->distanceToGo() != 0) {
@@ -297,6 +298,7 @@ void calibrateAxis(AccelStepper* stepper, int limitSwitch1, int limitSwitch2) {
   }
   Serial.println(F("Second Limit Reached"));
   stepper->stop(); // Stop the motor
+  delayMicroseconds(1000); // delay needed when switching directions
   Serial.printf("Axis steps, (mm): %d, (%2f)\n", abs(stepper->currentPosition()), 
                                         float(abs(stepper->currentPosition()) /STEPS_PER_MM));
   
@@ -318,7 +320,7 @@ void calibrateAxis(AccelStepper* stepper, int limitSwitch1, int limitSwitch2) {
   }
   stepper->stop();
   stepper->disableOutputs();
-
+ delayMicroseconds(1000); // delay needed when switching directions
   
 }
 
